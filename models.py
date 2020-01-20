@@ -18,7 +18,6 @@ class GraphicElement:
         self.y += yoffset
 
 class Window(GraphicElement):
-
     def __init__(self, width = 600, height = 800, caption = "Flappy Bird"):
         self.win = pygame.display.set_mode((width, height))
         pygame.display.set_caption(caption)
@@ -55,8 +54,8 @@ class Base(GraphicElement):
         self.x = x
         self.y = y
 
-class BaseOverlay():
-    def __init__(self, width, y = 730):
+class BaseOverlay:
+    def __init__(self, width = 600, y = 730):
         self.y = y
         self.width = width
         self.count = 2 + math.floor(width / Base.IMAGE.get_width())
@@ -121,23 +120,63 @@ class Bird(GraphicElement):
         pygame.transform.scale2x(pygame.image.load(os.path.join(GraphicElement.IMAGE_FOLDER, "bird2.png"))),
         pygame.transform.scale2x(pygame.image.load(os.path.join(GraphicElement.IMAGE_FOLDER, "bird3.png")))]
 
-    def __init__(self, startx = 230, starty = 350):
+    def __init__(self, startx = 230, starty = 350, animation_time = 3, rot_vel = 10):
+        # position and physics
         self.x = startx
         self.y = starty
+        self.yoffset = 0
+        self.gravity = 0
+        self.ticks = 0
+        self.tilt = 0
+        # appearence
+        self.animation_time = animation_time
+        self.rot_vel = rot_vel
         self.image_index = 0
         self.index_changer = None
         self.image = self.IMAGES[self.image_index]
-
-    def move_wings(self):
-        if self.image_index == 0:
-            self.index_changer = 1
-        if self.image_index == len(self.IMAGES) - 1:
-            self.index_changer = -1
-        self.image_index += self.index_changer
+        
+    def flap_wings(self):
+        if self.tilt <= -80:
+            self.image_index = 1
+        elif self.ticks % self.animation_time == 0:
+            if self.image_index == 0:
+                self.index_changer = 1
+            if self.image_index == len(self.IMAGES) - 1:
+                self.index_changer = -1
+            self.image_index += self.index_changer
         self.image = self.IMAGES[self.image_index]
     
+    def rotate(self):
+        if self.yoffset < 0:
+            self.tilt = 25
+        elif self.tilt > -80:
+            self.tilt -= self.rot_vel
+
     def move_by_offset(self, xoffset, yoffset):
-        self.move_wings()
         self.x += xoffset
         self.y += yoffset
+    
+    def draw(self, win):
+        rotated_image = pygame.transform.rotate(self.image, self.tilt)
+        new_rect = rotated_image.get_rect(center = self.image.get_rect(topleft = (self.x, self.y)).center)
+        win.blit(rotated_image, new_rect.topleft)
 
+    def fly(self):
+        self.ticks += 1
+        self.yoffset = self.gravity * self.ticks + 1.5 * (self.ticks)**2
+        print(f"Y-Offset = {self.gravity} * {self.ticks} + 1.5 * ({self.ticks})**2")
+        if self.yoffset >= 16:
+            self.yoffset = 16
+        if self.yoffset < 0:
+            self.yoffset -= 0
+        
+        print(f"Y-Offset {self.yoffset}")
+
+        self.move_by_offset(0, self.yoffset)
+        self.flap_wings()
+        self.rotate()
+    
+    def jump(self):
+        self.gravity = -10.5
+        self.ticks = 0
+        #self.height = self.y

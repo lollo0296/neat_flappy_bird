@@ -8,7 +8,7 @@ w = Window()
 
 pipe_pairs = [ PipePair() ]
 w.graphic_elements.append(pipe_pairs)
-base_overlay = BaseOverlay(w.width)
+base_overlay = BaseOverlay()
 w.graphic_elements.append( [ base_overlay ] )
 bird = Bird()
 w.graphic_elements.append( [ bird ] )
@@ -19,11 +19,15 @@ while run:
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
+            pygame.quit()
+            quit()
             run = False
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_SPACE:
+                bird.jump()
     w.clock.tick(30)
     w.draw()
     w.update()
-
 
     elems_to_remove = []
     for pipe_pair in pipe_pairs:
@@ -37,4 +41,4 @@ while run:
         pipe_pairs.remove(elem_to_remove)
 
     base_overlay.move_by_offset(-5, 0)
-    bird.move_wings()
+    bird.fly()
